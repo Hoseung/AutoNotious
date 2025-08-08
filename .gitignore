@@ -1,0 +1,180 @@
+# =====================================
+# Environment Variables
+# =====================================
+# NEVER commit .env files - they contain secrets!
+.env
+.env.local
+.env.*.local
+# Keep .env.example as it shows structure without secrets
+# .env.example  
+
+# =====================================
+# Python
+# =====================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments (NEVER commit these - they're huge and platform-specific)
+.venv/
+venv/
+ENV/
+env/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database files (contain user data, shouldn't be in git)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+instance/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# =====================================
+# Node.js / Frontend
+# =====================================
+# Dependencies (NEVER commit - they're huge and can be reinstalled)
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production build files (can be regenerated)
+/build
+/dist
+frontend/dist
+frontend/build
+
+# Development
+.DS_Store
+*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =====================================
+# Logs and temporary files
+# =====================================
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# =====================================
+# OS generated files
+# =====================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+
+# =====================================
+# LiteLLM / Prisma
+# =====================================
+# Prisma migrations during development
+prisma/migrations/dev/
+
+# Generated Prisma client
+.prisma/
+
+# =====================================
+# Claude-specific
+# =====================================
+.claude/
+
+# =====================================
+# Project specific
+# =====================================
+# Any local configuration files
+*.local.json
+*.local.yaml
+*.local.yml
+
+# Backup files
+*.backup
+*.old
+
+# Session/cache files
+.cache/
+*.session
+
+# Uploaded files (if any)
+uploads/
+media/
+
+# Test output
+test-results/
+playwright-report/
