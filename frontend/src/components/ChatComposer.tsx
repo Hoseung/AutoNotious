@@ -1,4 +1,5 @@
-import React, { useState, useRef, KeyboardEvent } from 'react';
+import React, { useState, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import './ChatComposer.css';
 
 interface ChatComposerProps {

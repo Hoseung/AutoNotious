@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatComposer } from './components/ChatComposer';
-import { sessionApi, Message } from './services/api';
+import { sessionApi } from './services/api';
+import type { Message } from './services/api';
 import { SSEClient } from './services/sse';
 
 function App() {

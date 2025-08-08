@@ -50,22 +50,6 @@ async def create_session(db: SQLSession = Depends(get_session)):
     return {"id": session.id}
 
 
-@router.get("/{session_id}")
-async def get_session(
-    session_id: str,
-    db: SQLSession = Depends(get_session)
-):
-    session = db.get(Session, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    return SessionResponse(
-        id=session.id,
-        title=session.title,
-        created_at=session.created_at
-    )
-
-
 @router.get("/{session_id}/messages")
 async def get_messages(
     session_id: str,
@@ -208,3 +192,19 @@ async def save_to_notion(
             status_code=502,
             detail=f"Failed to create Notion page: {str(e)}"
         )
+
+
+@router.get("/{session_id}")
+async def get_session(
+    session_id: str,
+    db: SQLSession = Depends(get_session)
+):
+    session = db.get(Session, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return SessionResponse(
+        id=session.id,
+        title=session.title,
+        created_at=session.created_at
+    )
