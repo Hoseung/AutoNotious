@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatComposer } from './components/ChatComposer';
+import { SessionSidebar } from './components/SessionSidebar';
 import { sessionApi } from './services/api';
-import type { Message } from './services/api';
+import type { Message, Session } from './services/api';
 import { SSEClient } from './services/sse';
 
 function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTitle, setSessionTitle] = useState<string>('New Chat');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +21,7 @@ function App() {
 
   useEffect(() => {
     initializeSession();
+    loadSessions();
     return () => {
       sseClient.current.disconnect();
     };
@@ -30,6 +33,15 @@ function App() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const loadSessions = async () => {
+    try {
+      const { sessions } = await sessionApi.list();
+      setSessions(sessions);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    }
   };
 
   const initializeSession = async () => {
@@ -59,6 +71,7 @@ function App() {
       setSessionTitle('New Chat');
       setMessages([]);
       localStorage.setItem('currentSessionId', id);
+      await loadSessions();
     } catch (error) {
       setError('Failed to create session');
       console.error('Failed to create session:', error);
@@ -70,6 +83,44 @@ function App() {
     setCurrentStreamContent('');
     setError(null);
     setSuccess(null);
+  };
+
+  const handleSessionSelect = async (selectedSessionId: string) => {
+    try {
+      const session = await sessionApi.get(selectedSessionId);
+      setSessionId(selectedSessionId);
+      setSessionTitle(session.title || 'New Chat');
+      localStorage.setItem('currentSessionId', selectedSessionId);
+      
+      const { messages } = await sessionApi.getMessages(selectedSessionId);
+      setMessages(messages);
+      setCurrentStreamContent('');
+      setError(null);
+      setSuccess(null);
+    } catch (error) {
+      console.error('Failed to load session:', error);
+      setError('Failed to load session');
+    }
+  };
+
+  const handleDeleteSession = async (sessionIdToDelete: string) => {
+    try {
+      await sessionApi.delete(sessionIdToDelete);
+      
+      // If we're deleting the current session, create a new one
+      if (sessionIdToDelete === sessionId) {
+        await createNewSession();
+      }
+      
+      // Refresh the sessions list
+      await loadSessions();
+      
+      setSuccess('Session deleted successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      setError('Failed to delete session');
+    }
   };
 
   const handleSendMessage = async (text: string) => {
@@ -111,6 +162,7 @@ function App() {
           
           const { messages } = await sessionApi.getMessages(sessionId);
           setMessages(messages);
+          await loadSessions();
         },
       });
     } catch (error) {
@@ -144,6 +196,7 @@ function App() {
       setSessionTitle(summary.title);
       setSuccess('Session summarized successfully');
       setTimeout(() => setSuccess(null), 3000);
+      await loadSessions();
     } catch (error) {
       console.error('Failed to summarize:', error);
       setError('Failed to summarize session');
@@ -165,41 +218,48 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1 className="session-title">{sessionTitle}</h1>
-        <div className="header-buttons">
-          <button onClick={handleNewChat} className="header-button">
-            New Chat
-          </button>
-          <button 
-            onClick={handleSummarize} 
-            className="header-button"
-            disabled={messages.length === 0}
-          >
-            Summarize
-          </button>
-          <button 
-            onClick={handleSaveToNotion} 
-            className="header-button"
-            disabled={messages.length === 0}
-          >
-            Save to Notion
-          </button>
-        </div>
-      </header>
+      <SessionSidebar
+        currentSessionId={sessionId}
+        onSessionSelect={handleSessionSelect}
+        onNewChat={handleNewChat}
+        sessions={sessions}
+        onRefresh={loadSessions}
+        onDeleteSession={handleDeleteSession}
+      />
+      
+      <div className="main-content">
+        <header className="app-header">
+          <h1 className="session-title">{sessionTitle}</h1>
+          <div className="header-buttons">
+            <button 
+              onClick={handleSummarize} 
+              className="header-button"
+              disabled={messages.length === 0}
+            >
+              Summarize
+            </button>
+            <button 
+              onClick={handleSaveToNotion} 
+              className="header-button"
+              disabled={messages.length === 0}
+            >
+              Save to Notion
+            </button>
+          </div>
+        </header>
 
-      {error && (
-        <div className="error-banner">
-          {error}
-          <button onClick={() => setError(null)} className="close-button">×</button>
-        </div>
-      )}
+        {error && (
+          <div className="error-banner">
+            {error}
+            <button onClick={() => setError(null)} className="close-button">×</button>
+          </div>
+        )}
 
-      {success && (
-        <div className="success-banner" dangerouslySetInnerHTML={{ __html: success }} />
-      )}
+        {success && (
+          <div className="success-banner" dangerouslySetInnerHTML={{ __html: success }} />
+        )}
 
-      <main className="chat-container">
+        <main className="chat-container">
         <div className="messages-list">
           {messages.map((message) => (
             <ChatMessage
@@ -231,6 +291,7 @@ function App() {
           />
         </div>
       </main>
+      </div>
     </div>
   );
 }

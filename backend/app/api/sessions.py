@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 from ..database import get_session
-from ..models import Session, Message, Summary
+from ..models import Session as SessionModel, Message, Summary
 from ..services import SummarizerService, NotionWriter
 from ..config import settings
 from pydantic import BaseModel
@@ -40,9 +40,25 @@ class NotionResponse(BaseModel):
     url: str
 
 
+@router.get("")
+async def list_sessions(db: SQLSession = Depends(get_session)):
+    statement = select(SessionModel).order_by(SessionModel.created_at.desc())
+    sessions = db.exec(statement).all()
+    
+    return {
+        "sessions": [
+            SessionResponse(
+                id=session.id,
+                title=session.title or "New Chat",
+                created_at=session.created_at
+            ) for session in sessions
+        ]
+    }
+
+
 @router.post("")
 async def create_session(db: SQLSession = Depends(get_session)):
-    session = Session()
+    session = SessionModel()
     db.add(session)
     db.commit()
     db.refresh(session)
@@ -55,7 +71,7 @@ async def get_messages(
     session_id: str,
     db: SQLSession = Depends(get_session)
 ):
-    session = db.get(Session, session_id)
+    session = db.get(SessionModel, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
@@ -82,7 +98,7 @@ async def summarize_session(
     session_id: str,
     db: SQLSession = Depends(get_session)
 ):
-    session = db.get(Session, session_id)
+    session = db.get(SessionModel, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
@@ -136,7 +152,7 @@ async def save_to_notion(
             detail="Notion API key or parent page ID not configured"
         )
     
-    session = db.get(Session, session_id)
+    session = db.get(SessionModel, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
@@ -195,11 +211,11 @@ async def save_to_notion(
 
 
 @router.get("/{session_id}")
-async def get_session(
+async def get_session_by_id(
     session_id: str,
     db: SQLSession = Depends(get_session)
 ):
-    session = db.get(Session, session_id)
+    session = db.get(SessionModel, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
@@ -208,3 +224,30 @@ async def get_session(
         title=session.title,
         created_at=session.created_at
     )
+
+
+@router.delete("/{session_id}")
+async def delete_session(
+    session_id: str,
+    db: SQLSession = Depends(get_session)
+):
+    session = db.get(SessionModel, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Delete related messages
+    statement = select(Message).where(Message.session_id == session_id)
+    messages = db.exec(statement).all()
+    for message in messages:
+        db.delete(message)
+    
+    # Delete related summary if exists
+    summary = db.get(Summary, session_id)
+    if summary:
+        db.delete(summary)
+    
+    # Delete the session
+    db.delete(session)
+    db.commit()
+    
+    return {"message": "Session deleted successfully"}

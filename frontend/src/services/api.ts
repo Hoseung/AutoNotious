@@ -33,6 +33,11 @@ export interface NotionPage {
 }
 
 export const sessionApi = {
+  list: async (): Promise<{ sessions: Session[] }> => {
+    const response = await api.get('/sessions');
+    return response.data;
+  },
+
   create: async (): Promise<{ id: string }> => {
     const response = await api.post('/sessions');
     return response.data;
@@ -55,6 +60,11 @@ export const sessionApi = {
 
   saveToNotion: async (sessionId: string): Promise<NotionPage> => {
     const response = await api.post(`/sessions/${sessionId}/notion`);
+    return response.data;
+  },
+
+  delete: async (sessionId: string): Promise<{ message: string }> => {
+    const response = await api.delete(`/sessions/${sessionId}`);
     return response.data;
   },
 };
